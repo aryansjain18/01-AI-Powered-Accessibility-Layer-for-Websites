@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "StudyLens",
+  "version": "1.0.0",
+  "description": "AI-powered learning and accessibility assistant for educational webpages.",
+  "action": { "default_title": "StudyLens" },
+  "side_panel": { "default_path": "src/sidepanel/index.html" },
+  "permissions": ["sidePanel", "activeTab", "tabs"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

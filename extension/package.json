@@ -1,20 +1,26 @@
-
 {
   "name": "@studylens/extension",
   "version": "1.0.0",
   "private": true,
-  "description": "StudyLens Chrome Extension",
+  "description": "StudyLens Chrome Extension (Manifest V3)",
+  "type": "module",
   "scripts": {
-    "build": "node scripts/build-not-implemented.cjs",
-    "dev": "node scripts/build-not-implemented.cjs"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@studylens/shared": "*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/chrome": "^0.0.260",
     "@types/react": "^18.2.0",
-    "@types/chrome": "^0.0.246",
-    "typescript": "^5.4.5"
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.0.0"
   }
 }
