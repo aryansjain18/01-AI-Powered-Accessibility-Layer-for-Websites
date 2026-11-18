@@ -13,14 +13,34 @@ Primary content scope: NCERT-style educational HTML pages, with extraction kept 
 | --- | --- |
 | Product requirements, ADRs, architecture | Documented |
 | API contract + shared TypeScript types | Implemented and aligned |
-| Shared contract unit tests | Implemented (`npm test`) |
+| Shared contract unit tests | Implemented (13 tests) |
 | Backend `/health` | Implemented |
 | Backend `POST /api/v1/process` | Input validation implemented; **AI processing not implemented** (returns `INTERNAL_ERROR`) |
-| Chrome extension (manifest, side panel, content script) | **Not implemented** — Phase 1 (M1) |
+| Chrome MV3 extension shell | **Implemented** — loads unpacked from `extension/dist` |
+| React Side Panel UI | **Implemented** — idle / loading / empty / error / ready states |
+| Selected-text capture | **Implemented** — trim, 5000-char limit, truncation flag, source metadata |
+| Extension ↔ content-script messaging | **Implemented** — typed messages with runtime validation |
+| Extension unit tests | Implemented (18 tests) |
+| Extension → backend calls | **Not implemented** (Phase 2) |
+| AI simplify / explain / translate / steps / listen | **Not implemented** (Phases 2–3) |
 | Database / request history | **Not implemented** — no schema exists |
-| Speech, translation, steps features | **Not implemented** — Phase 3 (M4) |
 
-`npm run build` intentionally fails at the extension step until Phase 1. Use `npm run build:baseline` to build what exists today.
+`npm run build` now builds shared, backend, and extension successfully.
+
+## Load the extension in Chrome
+
+1. Build: `npm run build:extension`
+2. Open `chrome://extensions/` (or `vivaldi://extensions/`)
+3. Enable **Developer mode**
+4. Click **Load unpacked** and select the `extension/dist` folder
+5. Pin **StudyLens** to the toolbar
+6. Open an educational webpage, select a paragraph, click the StudyLens icon
+7. The side panel shows the selected text, page title, and character count
+8. Use **Capture selection** to retry, **Clear selection** to reset
+
+After every rebuild: reload the extension on the extensions page **and refresh the target webpage**.
+
+Permissions used: `sidePanel`, `activeTab`, `tabs`. No storage, no host-wide access, no backend calls yet.
 
 ## Features (target MVP)
 
@@ -91,11 +111,11 @@ npm run build            # also runs the extension build: FAILS by design until 
 ## Test
 
 ```bash
-npm test        # shared contract unit tests (node --test)
+npm test        # 31 tests: 13 shared contract + 18 extension
 npm run typecheck
 ```
 
-Automated tests currently cover the shared API contract only. Backend HTTP tests and extension tests arrive in Phase 1–2.
+Coverage: shared API contract validation, selection-building logic, and extension message guards. Browser messaging is verified manually against real webpages.
 
 ## Run the backend
 
@@ -157,10 +177,10 @@ Decisions locked: Chrome desktop, Chrome side panel, selected-text-first, provid
 Only the text needed for the requested action is sent. No passwords or private form values are extracted. No raw page text is stored. API keys stay on the backend. Webpage content is untrusted; AI-generated HTML/scripts are never executed. Details and the current verification boundary: `docs/privacy-security.md`.
 
 ## Known limitations
-- No extension bundle, manifest, or UI yet.
 - `/api/v1/process` validates input but performs no AI work.
-- No database, no history, no speech, no translation yet.
-- Only shared-contract unit tests exist.
+- The extension does not call the backend yet.
+- No database, history, speech, translation, or reading view.
+- Automated tests cover pure logic; browser flows are manually verified.
 - Provider/rate-limit error codes are specified but not yet emitted.
 
 ## Documentation

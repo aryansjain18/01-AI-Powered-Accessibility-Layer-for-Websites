@@ -29,3 +29,5 @@ npm-debug.log*
 # Operating system
 .DS_Store
 Thumbs.db
+
+dist-tests/

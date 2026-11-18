@@ -24,7 +24,7 @@
     "typecheck:shared": "npm run typecheck --workspace=shared",
     "typecheck:backend": "npm run typecheck --workspace=backend",
     "typecheck": "npm run build:shared && npm run typecheck:shared && npm run typecheck:backend",
-    "test": "npm run test --workspace=shared"
+    "test": "npm run test --workspace=shared && npm run test --workspace=extension"
   },
   "license": "MIT",
   "allowScripts": {

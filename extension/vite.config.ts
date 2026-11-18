@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
+// App build: React side panel (HTML entry) + background service worker (ESM).
+// The content script is built separately by vite.content.config.ts because
+// Chrome loads content scripts as CLASSIC scripts (no import statements).
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -11,15 +14,17 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    emptyOutDir: true,
+    emptyOutDir: true, // this pass runs FIRST and cleans dist
     rollupOptions: {
       input: {
         sidepanel: resolve(__dirname, 'src/sidepanel/index.html'),
-        content: resolve(__dirname, 'src/content/selection.ts'),
         background: resolve(__dirname, 'src/background/service-worker.ts'),
       },
       output: {
-        entryFileNames: '[name].js',
+        format: 'es',
+        entryFileNames: (chunk) => (chunk.name === 'background' ? 'background.js' : '[name].js'),
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
   },

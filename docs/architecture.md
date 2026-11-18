@@ -101,3 +101,52 @@ studylens/
 - AI-generated scripts and HTML must never be executed directly.
 - Request logs must contain metadata only, never submitted text or model output.
 - Chrome permissions must be limited to the actual extension requirements.
+
+## Implemented extension components (Phase 1)
+
+| File | Responsibility |
+| --- | --- |
+| `extension/public/manifest.json` | MV3 config: action, side panel, background worker, content-script matches, permissions |
+| `extension/src/background/service-worker.ts` | Resolves the active tab, checks URL support, routes capture requests, opens the side panel |
+| `extension/src/content/selection.ts` | Thin browser wrapper: reads `window.getSelection()`, answers `CAPTURE_SELECTION` |
+| `extension/src/content/capture.ts` | Pure logic: trim, 5000-char truncation, `SourceInfo` construction. No browser globals. |
+| `extension/src/types/messages.ts` | Message constants, payload types, runtime type guards, URL support check |
+| `extension/src/sidepanel/App.tsx` | React UI: idle / loading / empty / error / ready states, plain-text rendering |
+
+### Actual message flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant P as React Side Panel
+    participant B as Background Service Worker
+    participant C as Content Script
+    participant W as Webpage
+
+    U->>W: Selects text
+    U->>B: Clicks toolbar icon
+    B->>P: sidePanel.open({windowId})
+    P->>B: REQUEST_SELECTION
+    B->>B: tabs.query(active, currentWindow)
+    B->>B: isSupportedUrl(tab.url)
+    B->>C: CAPTURE_SELECTION (explicit tabId)
+    C->>W: window.getSelection()
+    C->>C: buildSelection(text, title, url)
+    C-->>B: {success:true, payload}
+    B-->>P: SelectionResponse via sendResponse
+    P->>U: Renders plain text + metadata
+```
+
+### Build architecture
+
+Two independent Vite passes, because Chrome runs content scripts as **classic scripts** but requires the service worker to be an **ES module**:
+
+| Pass | Config | Input | Format | Output |
+| --- | --- | --- | --- | --- |
+| App | `vite.config.ts` | side panel HTML + background TS | ESM | `sidepanel.js`, `background.js`, assets, copies `manifest.json` |
+| Content | `vite.content.config.ts` | `selection.ts` only | IIFE | self-contained `content.js`, no imports |
+
+The content pass sets `emptyOutDir: false` and `copyPublicDir: false` so it does not erase the app output.
+
+### Not implemented yet
+Extension → backend HTTP calls, AI provider adapter, speech, translation, steps, reading view, persistence.

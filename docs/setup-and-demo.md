@@ -119,28 +119,32 @@ curl -i -X POST http://localhost:3000/api/v1/process \
 
 Every response carries an `X-Request-Id` header and a `requestId` field.
 
-## 9. Chrome unpacked-extension instructions — UPCOMING (Phase 1)
+## 9. Load the extension in Chrome — AVAILABLE
 
-There is no extension to load yet. Planned workflow once Phase 1 is complete:
-1. `npm run build:extension`
-2. Visit `chrome://extensions/`
-3. Toggle **Developer mode** on
-4. Click **Load unpacked**, choose `extension/dist`
-5. Pin StudyLens, open an NCERT page, select text, open the side panel
+```bash
+npm run build:extension
+```
 
-## 10. Demo script — target end state (not runnable yet)
+1. Visit `chrome://extensions/` (Vivaldi: `vivaldi://extensions/`)
+2. Toggle **Developer mode** on
+3. Click **Load unpacked**, choose `extension/dist`
+4. Pin StudyLens to the toolbar
+5. Open an educational page, select text, click the icon
 
-Available after Phase 3 (M4):
-1. Open an NCERT lesson page.
-2. Select a dense paragraph.
-3. Open the StudyLens side panel; confirm it shows "Selected text".
-4. Click **Make it simple** → verify the rewrite matches the selected content.
-5. Click **My language** → Hindi, then Kannada → verify the target language label.
-6. Click **Guide me** → verify numbered steps and checkboxes.
-7. Click **Listen** → verify speech starts and stops.
-8. Toggle **Clear reading view** → verify font size and contrast controls.
+**Developing from a Codespace:** the browser cannot load an extension from a remote filesystem. Build in the Codespace, download `extension/dist` to your local machine (VS Code Desktop: right-click the folder → Download), then load that local folder. After each rebuild, reload the extension and refresh the test page.
 
-Today, only steps in sections 4–8 of this guide are demonstrable.
+## 10. Demo script — Phase 1 (runnable today)
+
+1. Open `https://en.wikipedia.org/wiki/Photosynthesis`
+2. Select the first paragraph
+3. Click the StudyLens toolbar icon
+4. Confirm the side panel shows the "Selected text" badge, page title, the paragraph, and a character count
+5. Click **Clear selection** → confirm the empty state
+6. Select nothing and click **Capture selection** → confirm the "No text selected" fallback
+7. Select several long paragraphs (>5000 chars) → confirm the truncation warning
+8. Switch to `chrome://extensions` and click the icon → confirm the unsupported-page message
+
+AI features (Simplify, Explain, Translate, Listen, Steps) are not part of this demo yet.
 
 ## 11. Troubleshooting
 

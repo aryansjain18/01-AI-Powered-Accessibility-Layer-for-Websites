@@ -1,7 +1,10 @@
 import type { SourceInfo } from '@studylens/shared';
 
+// Literal values (not imported constants) so the content script can compare
+// message types without pulling in any runtime module.
 export const REQUEST_SELECTION = 'REQUEST_SELECTION';
 export const CAPTURE_SELECTION = 'CAPTURE_SELECTION';
+export const SELECTION_RESULT = 'SELECTION_RESULT';
 
 export interface CapturedSelection {
   text: string;
@@ -22,28 +25,14 @@ export type SelectionResponse =
   | { success: true; payload: CapturedSelection }
   | { success: false; reason: CaptureFailureReason; message: string };
 
-export interface RequestSelectionMessage {
-  type: typeof REQUEST_SELECTION;
+export function isRequestSelectionMessage(value: unknown): value is { type: typeof REQUEST_SELECTION } {
+  return typeof value === 'object' && value !== null &&
+    (value as { type?: unknown }).type === REQUEST_SELECTION;
 }
 
-export interface CaptureSelectionMessage {
-  type: typeof CAPTURE_SELECTION;
-}
-
-export function isRequestSelectionMessage(value: unknown): value is RequestSelectionMessage {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as { type?: unknown }).type === REQUEST_SELECTION
-  );
-}
-
-export function isCaptureSelectionMessage(value: unknown): value is CaptureSelectionMessage {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as { type?: unknown }).type === CAPTURE_SELECTION
-  );
+export function isCaptureSelectionMessage(value: unknown): value is { type: typeof CAPTURE_SELECTION } {
+  return typeof value === 'object' && value !== null &&
+    (value as { type?: unknown }).type === CAPTURE_SELECTION;
 }
 
 export function isCapturedSelection(value: unknown): value is CapturedSelection {

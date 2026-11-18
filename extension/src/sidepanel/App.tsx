@@ -40,12 +40,16 @@ export default function App() {
   }, [applyResult]);
 
   useEffect(() => {
+    // Listen for push updates from background (e.g., after toolbar click)
     const listener = (message: unknown) => {
       const m = message as { type?: string; result?: SelectionResponse };
       if (m?.type === 'SELECTION_RESULT' && m.result) applyResult(m.result);
     };
     chrome.runtime.onMessage.addListener(listener);
+    
+    // Auto-capture on mount
     requestSelection();
+    
     return () => chrome.runtime.onMessage.removeListener(listener);
   }, [applyResult, requestSelection]);
 
@@ -56,13 +60,20 @@ export default function App() {
         <h1>StudyLens</h1>
       </header>
 
-      <p className="sl-hint">Select text on a webpage to start learning.</p>
-
-      <button className="sl-primary" onClick={requestSelection} disabled={status === 'loading'}>
+      {/* Primary Action Button - Always visible for retries */}
+      <button 
+        className="sl-primary" 
+        onClick={requestSelection} 
+        disabled={status === 'loading'}
+        aria-label="Capture current text selection"
+      >
         {status === 'loading' ? 'Capturing…' : 'Capture selection'}
       </button>
 
-      {status === 'loading' && <p className="sl-status" role="status">Reading your selection…</p>}
+      {/* Status Messages */}
+      {status === 'loading' && (
+        <p className="sl-status" role="status">Reading your selection…</p>
+      )}
 
       {(status === 'empty' || status === 'error' || status === 'idle') && (
         <p className={status === 'error' ? 'sl-status sl-error' : 'sl-status'} role="status">
@@ -70,16 +81,23 @@ export default function App() {
         </p>
       )}
 
+      {/* Success State */}
       {status === 'ready' && selection && (
         <section className="sl-card" aria-label="Selected text">
           <div className="sl-meta">
             <span className="sl-badge">Selected text</span>
-            <span className="sl-title">{selection.source.pageTitle}</span>
+            <span className="sl-title" title={selection.source.pageTitle}>
+              {selection.source.pageTitle}
+            </span>
           </div>
+          
           {selection.source.truncated && (
-            <p className="sl-warn">Text was shortened to the 5000-character limit.</p>
+            <p className="sl-warn">Text was shortened to fit the 5000-character limit.</p>
           )}
+          
+          {/* Plain text only. Never innerHTML. */}
           <div className="sl-text">{selection.text}</div>
+          
           <div className="sl-actions">
             <span className="sl-count">{selection.text.length} characters</span>
             <button
@@ -87,8 +105,9 @@ export default function App() {
               onClick={() => {
                 setSelection(null);
                 setStatus('empty');
-                setNotice('Selection cleared. Select text and capture again.');
+                setNotice('Selection cleared. Select new text and capture again.');
               }}
+              aria-label="Clear current selection"
             >
               Clear selection
             </button>

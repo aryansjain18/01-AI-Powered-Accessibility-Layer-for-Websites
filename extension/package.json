@@ -6,9 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:app": "vite build",
+    "build:content": "vite build --config vite.content.config.ts",
+    "build": "tsc --noEmit && npm run build:app && npm run build:content",
+    "pretest": "rm -rf dist-tests && tsc -p tsconfig.test.json && node -e \"require('fs').writeFileSync('dist-tests/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\"",
+    "test": "node --test dist-tests/content/capture.test.js dist-tests/types/messages.test.js"
   },
   "dependencies": {
     "@studylens/shared": "*",
@@ -17,6 +20,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.260",
+    "@types/node": "^20.12.12",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.0",
