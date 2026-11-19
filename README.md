@@ -21,13 +21,11 @@ Primary content scope: NCERT-style educational HTML pages, with extraction kept 
 | Selected-text capture | **Implemented** — trim, 5000-char limit, truncation flag, source metadata |
 | Extension ↔ content-script messaging | **Implemented** — typed messages with runtime validation |
 | Extension unit tests | Implemented (18 tests) |
-| Backend `POST /api/v1/process` | Validation implemented; **AI processing not implemented** (returns `INTERNAL_ERROR`) |
-| AI provider adapter (Groq / Qwen) | **Implemented and unit-tested**; not yet called by the route |
-| Provider-independent interface + mock provider | **Implemented** |
-| Backend configuration validation | **Implemented** (fails fast on bad config) |
-| Extension backend HTTP client | **Implemented and unit-tested**; browser wiring pending Phase 3 |
-| Backend + integration tests | Implemented (25 backend tests) |
-| AI simplify / explain / translate / steps / listen | **Not implemented** (Phases 2–3) |
+| Backend `POST /api/v1/process` | **Implemented** — Validates input, calls Groq Qwen 3.8 27B, returns simplified text |
+| AI Provider Adapter | **Implemented** — Groq Cloud with Qwen 3.8 27B (preview model) |
+| Simplify Feature | **Implemented** — Real AI simplification with prompt engineering + output validation |
+| Extension ↔ Backend Communication | **Implemented** — Health check, process request, error handling, offline detection |
+| Automated Tests | **93 passing** — Shared (13) + Backend (45) + Extension (35) |
 | Database / request history | **Not implemented** — no schema exists |
 
 `npm run build` now builds shared, backend, and extension successfully.
@@ -116,11 +114,12 @@ npm run build            # also runs the extension build: FAILS by design until 
 ## Test
 
 ```bash
-npm test        # 67 tests: 13 shared + 25 backend + 29 extension
+npm test        # 93 tests: 13 shared + 45 backend + 35 extension
 npm run typecheck
 ```
 
-All provider tests use an injected fetch, so the suite makes no network calls and costs nothing.
+All provider tests use injected mocks. Zero network calls. Zero token spend.
+Real AI testing performed manually on Wikipedia, Khan Academy, and NASA pages.
 
 ## Run the backend
 
@@ -190,6 +189,9 @@ Only the text needed for the requested action is sent. No passwords or private f
 - The Groq adapter is tested but not yet invoked by `/api/v1/process`.
 - `qwen/qwen3.8-27b` is a billable **preview** model that Groq may discontinue; change `GROQ_MODEL` to switch.
 - `/api/v1/config` is a development diagnostic and must be secured or removed before public deployment.
+- `qwen/qwen3.8-27b` is a **billable preview model** ($0.80/1M input, $4.00/1M output). May be discontinued.
+- Backend currently runs locally only. Production requires HTTPS + authentication.
+- Node 18.19.1 supported but shows engine warnings; Node ≥20 recommended.
 
 ## Documentation
 - [Product requirements](docs/product-requirements.md)

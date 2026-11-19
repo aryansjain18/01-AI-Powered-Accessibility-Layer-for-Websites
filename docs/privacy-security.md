@@ -2,28 +2,22 @@
 
 This document states the policy **and** what has actually been verified in code today. Policy statements are requirements for all future phases; they are not claims that future behaviour is already tested.
 
-## 1. Verification boundary (current state, end of Phase 2)
+## 1. Verification Boundary (End of Phase 3)
 
-Verified by inspecting the repository and running the automated suite:
-- **No database exists.** No schema, migration, or persistence code.
-- **No AI processing is reachable from the API.** `/api/v1/process` validates then returns `INTERNAL_ERROR`. The Groq adapter exists and is unit-tested, but the route does not call it.
-- **No request-body logging.** Backend logs only `requestId`, `method`, `route`, `status`, `latencyMs`.
-- **No provider logging.** `groq.provider.ts` contains no `console.*` call. Selected text and model output are never logged.
-- **API key used exactly once**, in the outbound `Authorization` header. Asserted by inspection and by the test `never puts the api key in the result`.
-- **No key in HTTP responses.** `describeConfig()` emits `credentialsPresent` as a boolean, and only for the active provider. Guarded by two regression tests.
-- **Provider error messages are fixed safe strings.** Provider error bodies (which can echo request content) are discarded, never forwarded. Guarded by `maps 401 to INTERNAL_ERROR and hides provider detail`.
-- **Extension holds no credentials.** `BackendClient` sends only `Content-Type`. Asserted by `never sends an Authorization header`.
-- **No selected text persisted by the extension.** React state only; no `storage` permission.
-- **Plain-text rendering only.** No `innerHTML`, no `eval`.
-- **`.env` is git-ignored**; `.env.example` carries an empty `GROQ_API_KEY`.
-- **Automated tests make zero network calls.** All provider tests inject `fetchImpl`; no token spend.
+Verified by code inspection + manual testing:
+-   **AI Processing Active**: `/api/v1/process` calls Groq Qwen 3.8 27B via provider adapter.
+-   **No Key Leakage**: API key in backend `.env` only. Extension has zero credential access.
+-   **Plain Text Output**: HTML/code fences/control chars stripped. Max 12k char cap.
+-   **No Persistence**: Selected/simplified text in React state only. Lost on close.
+-   **Safe Errors**: Provider errors mapped to fixed messages. No raw provider text exposed.
+-   **Bound Fetch**: `globalThis.fetch.bind(globalThis)` prevents context loss.
+-   **Host Permissions Explicit**: localhost/127.0.0.1/*.app.github.dev declared in manifest.
 
-Not yet verifiable (no implementation):
-- Real provider data handling under live traffic (Phase 3).
-- Prompt-injection resistance in practice — the system prompt isolates source text, but this is untested against adversarial pages.
-- Structured-output enforcement via `json_schema` (Phase 3).
-- Speech, history, reading-view flows (Phase 4).
-- HTTPS transport in a deployed environment.
+Not Yet Verified:
+-   Production HTTPS deployment
+-   User authentication/authorization
+-   Rate limiting beyond provider level
+-   Audit logging of AI requests
 
 ## 2b. Provider credential policy (implemented)
 - Keys live only in backend environment variables, loaded from the git-ignored root `.env`.

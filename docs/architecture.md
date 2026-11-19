@@ -193,3 +193,29 @@ Extension → `POST /api/v1/process` → shared validation → **placeholder `IN
 | GET | `/health` | Liveness; reports version `2.0.0` |
 | GET | `/api/v1/config` | Safe provider diagnostic (no secrets) |
 | POST | `/api/v1/process` | Contract-validated processing (AI pending Phase 3) |
+
+## Phase 3: Simplify Flow Architecture
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant P as Side Panel
+    participant B as Backend
+    participant G as Groq API
+    
+    U->>P: Select text + Click Simplify
+    P->>B: POST /api/v1/process {action, text, source}
+    B->>B: Validate request + Build prompt
+    B->>G: POST /chat/completions {system+user messages}
+    G-->>B: JSON response {text, steps, caveats}
+    B->>B: Validate/stripping/truncation
+    B-->>P: 200 {success, action, result, requestId}
+    P->>U: Render simplified text + Copy button
+```
+
+Key Components
+- Prompt Registry (prompts/simplify.prompt.ts): Action-specific prompts with safety rules
+- Output Validator (validation/result.validation.ts): HTML stripping, length caps, list bounds
+- Bound Fetch (services/backend.ts): globalThis.fetch.bind(globalThis) prevents Illegal Invocation
+- Detached Server: nohup node ... < /dev/null & prevents suspension in background
+

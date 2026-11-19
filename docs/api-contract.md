@@ -288,3 +288,11 @@ Response `500`:
 | `credentialsPresent` | Boolean only, and only meaningful when provider is `groq`. **Never the key value.** |
 
 This endpoint is a development diagnostic. It must never expose credentials, and it should be removed or authenticated before any public deployment.
+
+### Implemented Actions
+-   **simplify**: Returns simplified text preserving original meaning. Uses Groq Qwen 3.8 27B.
+    -   Input: `{action: "simplify", text: string, source: {...}}`
+    -   Output: `{success: true, action: "simplify", result: {text, language, steps, caveats}, requestId}`
+
+### Not Yet Implemented
+-   explain, translate, steps, listen (Phase 4)
