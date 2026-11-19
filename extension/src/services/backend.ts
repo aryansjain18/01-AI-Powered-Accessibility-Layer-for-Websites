@@ -35,7 +35,8 @@ export class BackendClient {
   constructor(o: ClientOptions = {}) {
     this.baseUrl = (o.baseUrl ?? DEFAULT_BACKEND_BASE_URL).replace(/\/+$/, '');
     this.timeoutMs = o.timeoutMs ?? 15000;
-    this.doFetch = o.fetchImpl ?? fetch;
+    // Native fetch requires Window/globalThis as its receiver.
+    this.doFetch = o.fetchImpl ?? globalThis.fetch.bind(globalThis);
   }
 
   health(): Promise<BackendResult<HealthResponse>> {
