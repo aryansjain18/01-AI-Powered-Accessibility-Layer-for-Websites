@@ -1,26 +1,60 @@
 import type { Application, Response } from 'express';
-import { API_PROCESS_PATH, validateProcessRequest, ERROR_HTTP_STATUS } from '@studylens/shared';
-import type { ErrorCode, ProcessErrorResponse } from '@studylens/shared';
+import {
+  API_PROCESS_PATH,
+  validateProcessRequest,
+  ERROR_HTTP_STATUS,
+} from '@studylens/shared';
+import type { ErrorCode, ProcessErrorResponse, ProcessSuccessResponse } from '@studylens/shared';
 import type { AiProvider } from '../ai/provider.interface';
+import { ProviderError } from '../ai/errors/provider.errors';
+
+/** Actions implemented so far. Others stay rejected until their phase. */
+const IMPLEMENTED_ACTIONS = new Set(['simplify']);
 
 export function sendError(res: Response, code: ErrorCode, message: string, requestId: string): void {
   const body: ProcessErrorResponse = { success: false, error: { code, message }, requestId };
   res.status(ERROR_HTTP_STATUS[code]).json(body);
 }
 
-/**
- * Phase 2 scope boundary: validation runs, provider.complete() is NOT called yet.
- * The adapter is proven by unit tests; the user-facing AI feature lands in Phase 3.
- * `_provider` is intentionally unused until then.
- */
-export function registerProcessRoute(app: Application, _provider: AiProvider): void {
-  app.post(API_PROCESS_PATH, (req, res) => {
+export function registerProcessRoute(app: Application, provider: AiProvider): void {
+  app.post(API_PROCESS_PATH, async (req, res) => {
     const requestId = String(res.locals.requestId ?? '');
+
     const validation = validateProcessRequest(req.body);
     if (!validation.ok) {
       sendError(res, validation.code, validation.message, requestId);
       return;
     }
-    sendError(res, 'INTERNAL_ERROR', 'AI processing is not implemented yet. Scheduled for Phase 3.', requestId);
+
+    const { action, text, targetLanguage } = validation.value;
+
+    if (!IMPLEMENTED_ACTIONS.has(action)) {
+      sendError(
+        res,
+        'INTERNAL_ERROR',
+        `The "${action}" feature is not implemented yet. Only Simplify is available.`,
+        requestId
+      );
+      return;
+    }
+
+    try {
+      const result = await provider.complete({ action, text, targetLanguage, requestId });
+      
+      // Build strictly typed success response matching shared contract
+      const body: ProcessSuccessResponse = {
+        success: true,
+        action,
+        result,
+        requestId,
+      };
+      
+      res.status(200).json(body);
+    } catch (e) {
+      const err = e instanceof ProviderError ? e : new ProviderError('SERVER');
+      // Log only safe metadata. Never the text, the model output, or credentials.
+      console.error(JSON.stringify({ requestId, providerFailure: err.failure, code: err.code }));
+      sendError(res, err.code, err.message, requestId);
+    }
   });
 }

@@ -1,7 +1,8 @@
 import type { ProcessRequest, ProcessResponse, HealthResponse } from '@studylens/shared';
 import { API_PROCESS_PATH, HEALTH_PATH } from '@studylens/shared';
+import { DEFAULT_BACKEND_BASE_URL } from '../config/backend-url';
 
-export const DEFAULT_BACKEND_BASE_URL = 'http://localhost:3000';
+export { DEFAULT_BACKEND_BASE_URL };
 
 export type BackendFailure = 'OFFLINE' | 'TIMEOUT' | 'BAD_JSON' | 'HTTP_ERROR';
 

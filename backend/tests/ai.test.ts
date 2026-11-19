@@ -1,7 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadConfig, ConfigError, describeConfig } from '../src/config/env';
-import { GroqProvider, normalize } from '../src/ai/providers/groq.provider';
+import { GroqProvider } from '../src/ai/providers/groq.provider';
+import { parseAndValidate } from '../src/ai/validation/result.validation';
 import { MockProvider } from '../src/ai/providers/mock.provider';
 import { createProvider } from '../src/ai/provider.factory';
 import { ProviderError } from '../src/ai/errors/provider.errors';
@@ -113,11 +114,11 @@ describe('groq adapter', () => {
   });
 });
 
-describe('normalize', () => {
-  it('accepts valid shape', () => assert.equal(normalize('{"text":"hi","steps":[]}', 'en').text, 'hi'));
-  it('rejects array root', () => assert.throws(() => normalize('[]', 'en')));
-  it('rejects missing text', () => assert.throws(() => normalize('{"steps":[]}', 'en')));
-  it('filters non-string steps', () => assert.deepEqual(normalize('{"text":"hi","steps":[1,"a"]}', 'en').steps, ['a']));
+describe('validateResult', () => {
+  it('accepts valid shape', () => assert.equal(parseAndValidate('{"text":"hi","steps":[]}', 'en').text, 'hi'));
+  it('rejects array root', () => assert.throws(() => parseAndValidate('[]', 'en')));
+  it('rejects missing text', () => assert.throws(() => parseAndValidate('{"steps":[]}', 'en')));
+  it('filters non-string steps', () => assert.deepEqual(parseAndValidate('{"text":"hi","steps":[1,"a"]}', 'en').steps, ['a']));
 });
 
 describe('factory', () => {
