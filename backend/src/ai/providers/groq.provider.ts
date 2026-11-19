@@ -2,7 +2,7 @@ import type { ProcessResult } from '@studylens/shared';
 import { DEFAULT_LANGUAGE } from '@studylens/shared';
 import type { AiProvider, ProviderRequest } from '../provider.interface';
 import { ProviderError } from '../errors/provider.errors';
-import { buildPrompt } from '../prompts/simplify.prompt';
+import { buildPrompt } from '../prompts';
 import { parseAndValidate } from '../validation/result.validation';
 
 export interface GroqOptions {

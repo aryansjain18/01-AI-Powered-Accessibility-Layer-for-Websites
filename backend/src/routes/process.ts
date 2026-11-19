@@ -4,12 +4,11 @@ import {
   validateProcessRequest,
   ERROR_HTTP_STATUS,
 } from '@studylens/shared';
-import type { ErrorCode, ProcessErrorResponse, ProcessSuccessResponse } from '@studylens/shared';
+import type { Action, ErrorCode, ProcessErrorResponse, ProcessSuccessResponse } from '@studylens/shared';
 import type { AiProvider } from '../ai/provider.interface';
 import { ProviderError } from '../ai/errors/provider.errors';
 
-/** Actions implemented so far. Others stay rejected until their phase. */
-const IMPLEMENTED_ACTIONS = new Set(['simplify']);
+const IMPLEMENTED_ACTIONS = new Set<Action>(['simplify', 'explain', 'translate', 'steps']);
 
 export function sendError(res: Response, code: ErrorCode, message: string, requestId: string): void {
   const body: ProcessErrorResponse = { success: false, error: { code, message }, requestId };
@@ -29,30 +28,16 @@ export function registerProcessRoute(app: Application, provider: AiProvider): vo
     const { action, text, targetLanguage } = validation.value;
 
     if (!IMPLEMENTED_ACTIONS.has(action)) {
-      sendError(
-        res,
-        'INTERNAL_ERROR',
-        `The "${action}" feature is not implemented yet. Only Simplify is available.`,
-        requestId
-      );
+      sendError(res, 'INTERNAL_ERROR', `The "${action}" feature is not implemented yet.`, requestId);
       return;
     }
 
     try {
       const result = await provider.complete({ action, text, targetLanguage, requestId });
-      
-      // Build strictly typed success response matching shared contract
-      const body: ProcessSuccessResponse = {
-        success: true,
-        action,
-        result,
-        requestId,
-      };
-      
+      const body: ProcessSuccessResponse = { success: true, action, result, requestId };
       res.status(200).json(body);
     } catch (e) {
       const err = e instanceof ProviderError ? e : new ProviderError('SERVER');
-      // Log only safe metadata. Never the text, the model output, or credentials.
       console.error(JSON.stringify({ requestId, providerFailure: err.failure, code: err.code }));
       sendError(res, err.code, err.message, requestId);
     }
