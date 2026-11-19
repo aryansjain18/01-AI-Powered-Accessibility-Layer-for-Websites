@@ -148,5 +148,48 @@ Two independent Vite passes, because Chrome runs content scripts as **classic sc
 
 The content pass sets `emptyOutDir: false` and `copyPublicDir: false` so it does not erase the app output.
 
-### Not implemented yet
-Extension → backend HTTP calls, AI provider adapter, speech, translation, steps, reading view, persistence.
+## Implemented provider boundary (Phase 2)
+
+```mermaid
+flowchart LR
+    EXT[Chrome Extension<br/>BackendClient] -->|POST /api/v1/process| RT[Express Route<br/>validateProcessRequest]
+    RT --> IF[AiProvider interface<br/>returns shared ProcessResult]
+    IF --> GQ[GroqProvider<br/>qwen/qwen3.8-27b]
+    IF --> MK[MockProvider<br/>offline, deterministic]
+    GQ -->|Bearer token, backend only| API[Groq Cloud<br/>/openai/v1/chat/completions]
+```
+
+| File | Responsibility |
+| --- | --- |
+| `backend/src/config/env.ts` | Loads and validates env; `describeConfig()` emits no secrets |
+| `backend/src/ai/provider.interface.ts` | `AiProvider` + `ProviderRequest`; provider-independent |
+| `backend/src/ai/provider.factory.ts` | Selects provider from `AI_PROVIDER` |
+| `backend/src/ai/providers/groq.provider.ts` | Groq HTTP call, timeout, retries, response normalization |
+| `backend/src/ai/providers/mock.provider.ts` | Offline provider for tests and dev |
+| `backend/src/ai/errors/provider.errors.ts` | `ProviderError` with fixed safe messages and contract-code mapping |
+| `backend/src/routes/process.ts` | Validation + Phase 2 placeholder; provider injected but not yet called |
+| `extension/src/services/backend.ts` | `BackendClient` with health/process, offline/timeout/bad-JSON handling |
+
+### Failure mapping (adapter → shared contract)
+
+| Provider condition | `ProviderFailure` | Contract code | HTTP | Retryable |
+| --- | --- | --- | --- | --- |
+| Missing key/model | CONFIGURATION | INTERNAL_ERROR | 500 | No |
+| 401 / 403 | AUTH | INTERNAL_ERROR | 500 | No |
+| 429 | RATE_LIMIT | RATE_LIMITED | 429 | Yes |
+| Abort after `AI_TIMEOUT_MS` | TIMEOUT | PROVIDER_TIMEOUT | 504 | Yes |
+| 5xx / other non-OK | SERVER | PROVIDER_ERROR | 502 | Yes |
+| Unparseable or empty content | MALFORMED | PROVIDER_ERROR | 502 | No |
+| Network rejection | NETWORK | PROVIDER_ERROR | 502 | Yes |
+
+Retries: at most `AI_MAX_RETRIES`, linear backoff (250 ms × attempt). Auth and malformed failures never retry.
+
+### Current request flow (Phase 2)
+Extension → `POST /api/v1/process` → shared validation → **placeholder `INTERNAL_ERROR`**. The adapter is exercised by unit tests only. Phase 3 connects route → provider.
+
+### Endpoints
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Liveness; reports version `2.0.0` |
+| GET | `/api/v1/config` | Safe provider diagnostic (no secrets) |
+| POST | `/api/v1/process` | Contract-validated processing (AI pending Phase 3) |

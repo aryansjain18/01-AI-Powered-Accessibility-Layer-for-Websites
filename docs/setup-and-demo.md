@@ -32,6 +32,68 @@ git check-ignore -v .env      # should print a .gitignore rule
 git status --short            # .env must NOT appear
 ```
 
+## 3a. AI provider setup
+
+Default is the **mock** provider — no key, no cost, no network:
+```text
+AI_PROVIDER=mock
+```
+
+To use real Groq calls:
+1. Create a key at https://console.groq.com/keys
+2. In the repository-root `.env` (**never** in `.env.example`):
+   ```text
+   AI_PROVIDER=groq
+   GROQ_API_KEY=your_key_here
+   GROQ_MODEL=qwen/qwen3.8-27b
+   ```
+3. Restart the backend.
+
+`qwen/qwen3.8-27b` is a **preview** model priced at $0.80/1M input and $4.00/1M output tokens. Preview models may be discontinued at short notice. To switch models, change `GROQ_MODEL` and restart — no code change.
+
+List available models:
+```bash
+curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"
+```
+
+Verify configuration without exposing the key:
+```bash
+curl -s http://localhost:3000/api/v1/config
+```
+Expected with mock: `{"provider":"mock","model":null,"timeoutMs":30000,"maxRetries":1,"credentialsPresent":false}`
+
+## 8a. Phase 2 smoke checks
+
+```bash
+# health
+curl -s http://localhost:3000/health
+
+# safe provider diagnostic
+curl -s http://localhost:3000/api/v1/config
+
+# valid request -> placeholder (correct for Phase 2)
+curl -s -X POST http://localhost:3000/api/v1/process \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"simplify","text":"Plants make food using sunlight.","source":{"type":"selection"}}'
+
+# invalid: empty text -> 400 INVALID_INPUT
+curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:3000/api/v1/process \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"simplify","text":"   ","source":{"type":"selection"}}'
+
+# invalid: translate without language -> 400 INVALID_INPUT
+curl -s -X POST http://localhost:3000/api/v1/process \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"translate","text":"Hello","source":{"type":"selection"}}'
+```
+
+Secret hygiene check before every commit:
+```bash
+git check-ignore -v .env                      # must print a rule
+grep -n 'GROQ_API_KEY' .env.example           # must show an empty value
+git diff --cached | grep -n 'gsk_'            # only fake test fixtures allowed
+```
+
 ## 4. Build
 
 ```bash

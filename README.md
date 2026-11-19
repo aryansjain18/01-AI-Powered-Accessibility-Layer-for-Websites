@@ -21,7 +21,12 @@ Primary content scope: NCERT-style educational HTML pages, with extraction kept 
 | Selected-text capture | **Implemented** — trim, 5000-char limit, truncation flag, source metadata |
 | Extension ↔ content-script messaging | **Implemented** — typed messages with runtime validation |
 | Extension unit tests | Implemented (18 tests) |
-| Extension → backend calls | **Not implemented** (Phase 2) |
+| Backend `POST /api/v1/process` | Validation implemented; **AI processing not implemented** (returns `INTERNAL_ERROR`) |
+| AI provider adapter (Groq / Qwen) | **Implemented and unit-tested**; not yet called by the route |
+| Provider-independent interface + mock provider | **Implemented** |
+| Backend configuration validation | **Implemented** (fails fast on bad config) |
+| Extension backend HTTP client | **Implemented and unit-tested**; browser wiring pending Phase 3 |
+| Backend + integration tests | Implemented (25 backend tests) |
 | AI simplify / explain / translate / steps / listen | **Not implemented** (Phases 2–3) |
 | Database / request history | **Not implemented** — no schema exists |
 
@@ -111,11 +116,11 @@ npm run build            # also runs the extension build: FAILS by design until 
 ## Test
 
 ```bash
-npm test        # 31 tests: 13 shared contract + 18 extension
+npm test        # 67 tests: 13 shared + 25 backend + 29 extension
 npm run typecheck
 ```
 
-Coverage: shared API contract validation, selection-building logic, and extension message guards. Browser messaging is verified manually against real webpages.
+All provider tests use an injected fetch, so the suite makes no network calls and costs nothing.
 
 ## Run the backend
 
@@ -158,12 +163,12 @@ Not available yet. There is no `manifest.json` and no bundled UI. When Phase 1 l
 | `NODE_ENV` | `development` | Yes | Runtime mode label |
 | `ALLOWED_ORIGINS` | empty | Yes | Extra CORS origins, comma-separated |
 | `MAX_TEXT_LENGTH` | `5000` | Informational | Enforced value lives in shared contract |
-| `AI_PROVIDER` | `openai` | No (Phase 2) | Provider selection |
-| `AI_MODEL` | `gpt-4o-mini` | No (Phase 2) | Model id |
-| `AI_API_KEY` | empty | No (Phase 2) | Backend-only secret |
-| `AI_TIMEOUT_MS` | `30000` | No (Phase 2) | Provider timeout |
-| `AI_MAX_RETRIES` | `1` | No (Phase 2) | Provider retries |
-| `ENABLE_REQUEST_HISTORY` | `false` | No | Metadata-only history flag |
+| `AI_PROVIDER` | `mock` | Yes | `groq` (billable) or `mock` (offline, free) |
+| `GROQ_API_KEY` | empty | Only if `groq` | Backend-only secret. Never commit. |
+| `GROQ_MODEL` | `qwen/qwen3.8-27b` | Only if `groq` | Preview model, $0.80/1M in, $4.00/1M out |
+| `GROQ_BASE_URL` | `https://api.groq.com/openai/v1` | Only if `groq` | OpenAI-compatible base |
+| `AI_TIMEOUT_MS` | `30000` | Yes | Provider timeout via AbortController |
+| `AI_MAX_RETRIES` | `1` | Yes | Retries on retryable failures only |
 
 `.env` is git-ignored; only `.env.example` is committed.
 
@@ -182,6 +187,9 @@ Only the text needed for the requested action is sent. No passwords or private f
 - No database, history, speech, translation, or reading view.
 - Automated tests cover pure logic; browser flows are manually verified.
 - Provider/rate-limit error codes are specified but not yet emitted.
+- The Groq adapter is tested but not yet invoked by `/api/v1/process`.
+- `qwen/qwen3.8-27b` is a billable **preview** model that Groq may discontinue; change `GROQ_MODEL` to switch.
+- `/api/v1/config` is a development diagnostic and must be secured or removed before public deployment.
 
 ## Documentation
 - [Product requirements](docs/product-requirements.md)

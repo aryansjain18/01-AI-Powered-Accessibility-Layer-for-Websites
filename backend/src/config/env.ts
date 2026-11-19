@@ -74,6 +74,7 @@ export function describeConfig(c: AppConfig) {
     model: c.ai.provider === 'groq' ? c.ai.groqModel : null,
     timeoutMs: c.ai.timeoutMs,
     maxRetries: c.ai.maxRetries,
-    credentialsPresent: c.ai.groqApiKey.length > 0,
+    // Only meaningful for the provider actually in use.
+    credentialsPresent: c.ai.provider === 'groq' ? c.ai.groqApiKey.length > 0 : false,
   };
 }

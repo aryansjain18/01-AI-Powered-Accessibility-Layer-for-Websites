@@ -44,6 +44,11 @@ describe('config', () => {
     assert.ok(!JSON.stringify(d).includes('gsk_test_key'));
     assert.equal(d.credentialsPresent, true);
   });
+    it('reports no credentials for mock even if a key is set', () => {
+    const d = describeConfig(loadConfig({ AI_PROVIDER: 'mock', GROQ_API_KEY: 'gsk_leftover' } as NodeJS.ProcessEnv));
+    assert.equal(d.credentialsPresent, false);
+    assert.ok(!JSON.stringify(d).includes('gsk_leftover'));
+  });
 });
 
 describe('groq adapter', () => {
