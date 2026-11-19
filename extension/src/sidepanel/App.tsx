@@ -74,7 +74,7 @@ export default function App() {
     setBackendDetail(
       result.ok
         ? 'Backend responded, but the health payload was invalid.'
-        : `${result.error.failure} — ${result.error.message}`
+        : `${result.error.failure} — ${result.error.detail ?? result.error.message}`
     );
   }, []);
 
