@@ -17,6 +17,7 @@
     "src/types/messages.ts",
     "src/types/messages.test.ts",
     "src/services/backend.ts",
-    "src/services/backend.test.ts"
+    "src/services/backend.test.ts",
+    "src/sidepanel/App.test.tsx"
   ]
 }
